@@ -37,9 +37,7 @@ This repository gives you answers — **not with black boxes**, but with:
 ### ✅ Dataset: MNIST
 - 28x28 grayscale images of handwritten digits (0–9)
 - Pixel values normalized:  
-  \[
-  X_{\text{norm}} = \frac{X_{\text{raw}}}{255.0}
-  \]
+X_norm = X_raw / 255.0
 
 ### 🧠 Layers
 
@@ -56,26 +54,20 @@ This repository gives you answers — **not with black boxes**, but with:
 Forward propagation is how the network makes a prediction by passing data through the layers.
 
 ### 🔹 Hidden Layer
-\[
-Z^{[1]} = XW^{[1]} + b^{[1]}
-\]
-\[
-A^{[1]} = \text{ReLU}(Z^{[1]})
-\]
+Z1 = X.dot(W1) + b1
+A1 = np.maximum(0, Z1)  # ReLU
 
 ### 🔹 Output Layer
-\[
-Z^{[2]} = A^{[1]}W^{[2]} + b^{[2]}
-\]
-\[
-A^{[2]} = \text{Softmax}(Z^{[2]})
-\]
+Z2 = A1.dot(W2) + b2
+Z2_stable = Z2 - np.max(Z2, axis=1, keepdims=True)
+A2 = np.exp(Z2_stable) / np.sum(np.exp(Z2_stable), axis=1, keepdims=True)  # Softmax
 
-> 📌 **Softmax Stability Tip**  
-> To prevent numerical overflow:
-> \[
-> \text{Softmax}(z_i) = \frac{e^{z_i - \max(z)}}{\sum_j e^{z_j - \max(z)}}
-> \]
+
+> 📌 **Softmax Stability Tip**
+
+Z2 = A1.dot(W2) + b2
+Z2_stable = Z2 - np.max(Z2, axis=1, keepdims=True)
+A2 = np.exp(Z2_stable) / np.sum(np.exp(Z2_stable), axis=1, keepdims=True)  # Softmax
 
 ---
 
@@ -84,27 +76,26 @@ A^{[2]} = \text{Softmax}(Z^{[2]})
 Backpropagation updates weights by calculating gradients and moving in the direction of lower error.
 
 ### 🔹 Gradients for Output Layer (Layer 2)
-\[
-\frac{\partial L}{\partial W^{[2]}} = (A^{[1]})^T (A^{[2]} - Y_{\text{true}})
-\]
+dZ2 = A2 - Y_true
+dW2 = A1.T.dot(dZ2)
+db2 = np.sum(dZ2, axis=0, keepdims=True)
+
 
 ### 🔹 Gradients for Hidden Layer (Layer 1)
-\[
-\frac{\partial L}{\partial W^{[1]}} = X^T \left( (A^{[2]} - Y_{\text{true}}) W^{[2]^T} \cdot \text{ReLU}'(Z^{[1]}) \right)
-\]
+dA1 = dZ2.dot(W2.T)
+dZ1 = dA1 * (Z1 > 0)  # Derivative of ReLU
+dW1 = X.T.dot(dZ1)
+db1 = np.sum(dZ1, axis=0, keepdims=True)
+
 
 ---
 
 ## 🧮 Weight & Bias Updates
 
-\[
-W = W - \alpha \cdot \frac{\partial L}{\partial W}
-\]
-\[
-b = b - \alpha \cdot \frac{\partial L}{\partial b}
-\]
-
-> where **α** is the learning rate (step size during training).
+W1 -= learning_rate * dW1
+b1 -= learning_rate * db1
+W2 -= learning_rate * dW2
+b2 -= learning_rate * db2
 
 ---
 
